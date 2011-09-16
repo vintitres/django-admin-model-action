@@ -5,6 +5,7 @@ from django.http import HttpResponseRedirect
 
 ACTION_DESCRIPTION_NAME = 'short_description'
 ACTION_CAN_CALL_FUNC_NAME = 'can_add_action'
+ACTION_DONE_REDIRECT_URL = 'redirect_url'
 
 class ModelAction(object):
     form_prefix = "__model_action-"
@@ -14,6 +15,7 @@ class ModelAction(object):
         self.action_method = action_method
         self.action_name = getattr(self.action_method, ACTION_DESCRIPTION_NAME,  u"Model Action (please set a 'short_description' attribute on your method '%s')" % (self.action_method.__name__))
         self.can_add_action = getattr(self.action_method, ACTION_CAN_CALL_FUNC_NAME, None)
+        self.redirect_url = getattr(self.action_method, ACTION_DONE_REDIRECT_URL, None)
 
     @property    
     def name(self):
@@ -59,7 +61,8 @@ class ActionAdmin(admin.ModelAdmin):
                 form_name = action.form_name
                 if request.POST.has_key(form_name):
                     action.do_action(request, obj)
-            response = HttpResponseRedirect(request.path)
+            redirect_url = action.redirect_url or request.path
+            response = HttpResponseRedirect(redirect_url)
         else:
             response =  super(ActionAdmin, self).change_view(request, object_id, extra_context)
         return response
