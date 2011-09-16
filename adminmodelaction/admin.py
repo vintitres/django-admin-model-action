@@ -64,10 +64,11 @@ class ActionAdmin(admin.ModelAdmin):
     change_form_template = "adminmodelaction/model-action-change-form.html"
     
     def __init__(self, model, admin_site):
+        import inspect
         super(ActionAdmin, self).__init__(model, admin_site)
         model_actions = [] 
         for action_option in self.model_actions:
-            if issubclass(action_option, ModelAction):
+            if inspect.isclass(action_option) and issubclass(action_option, ModelAction):
                 model_actions.append(action_option())
             else:
                 model_actions.append(ProxyModelAction(action_options, model))
