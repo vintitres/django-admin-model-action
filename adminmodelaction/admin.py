@@ -7,7 +7,7 @@ ACTION_DESCRIPTION_NAME = 'short_description'
 ACTION_CAN_CALL_FUNC_NAME = 'can_add_action'
 ACTION_DONE_REDIRECT_URL = 'redirect_url'
 
-class ModelAction(AdminAction):
+class ModelAction(object):
     form_prefix = "__model_action-"
 
     @property
