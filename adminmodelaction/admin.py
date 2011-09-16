@@ -30,7 +30,7 @@ class ModelAction(object):
         return None
 
     def __unicode__(self):
-        return u"ModelAction %s" % self.action_name.__name__
+        return u"ModelAction %s" % self.action_name
 
 class ProxyModelAction(ModelAction):
 
@@ -83,11 +83,12 @@ class ActionAdmin(admin.ModelAdmin):
         obj = self.get_object(request, admin.util.unquote(object_id))    
         extra_context['model_actions'] = self.get_model_actions_for(request, obj)
         if request.POST.has_key('is_model_action'):
+            redirect_url = request.path
             for action in self.model_actions:
                 form_name = action.form_name
                 if request.POST.has_key(form_name):
                     action.do_action(request, obj)
-            redirect_url = action.get_redirect_url(request, obj) or request.path
+                    redirect_url = action.get_redirect_url(request, obj) or redirect_url
             response = HttpResponseRedirect(redirect_url)
         else:
             response =  super(ActionAdmin, self).change_view(request, object_id, extra_context)
