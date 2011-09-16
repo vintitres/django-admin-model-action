@@ -7,8 +7,33 @@ ACTION_DESCRIPTION_NAME = 'short_description'
 ACTION_CAN_CALL_FUNC_NAME = 'can_add_action'
 ACTION_DONE_REDIRECT_URL = 'redirect_url'
 
-class ModelAction(object):
+class ModelAction(AdminAction):
     form_prefix = "__model_action-"
+
+    @property
+    def name(self):
+        if hasattr(self, 'action_name'):
+            return self.action_name
+        raise NotImplementedError
+
+    @property
+    def form_name(self):
+        return u"%s%s" % (self.form_prefix, self.name.lower().replace(" ", "-"))
+
+    def can_act_for(self, request, obj):
+        return True
+
+    def do_action(self, request, obj):
+        raise NotImplementedError
+
+    def get_redirect_url(self, request, obj):
+        return None
+
+    def __unicode__(self):
+        return u"ModelAction %s" % self.action_name.__name__
+
+class ProxyModelAction(ModelAction):
+
     def __init__(self, action_method, model):
         if not callable(action_method):
             action_method = getattr(model, action_method)
@@ -16,14 +41,6 @@ class ModelAction(object):
         self.action_name = getattr(self.action_method, ACTION_DESCRIPTION_NAME,  u"Model Action (please set a 'short_description' attribute on your method '%s')" % (self.action_method.__name__))
         self.can_add_action = getattr(self.action_method, ACTION_CAN_CALL_FUNC_NAME, None)
         self.redirect_url = getattr(self.action_method, ACTION_DONE_REDIRECT_URL, None)
-
-    @property    
-    def name(self):
-        return self.action_name
-
-    @property
-    def form_name(self):
-        return u"%s%s" % (self.form_prefix, self.name.lower().replace(" ", "-"))
 
     def can_act_for(self, request, obj):
         if self.can_add_action:
@@ -41,9 +58,6 @@ class ModelAction(object):
             return self.redirect_url(request, obj)
         return None
             
-    def __unicode__(self):
-        return u"ModelAction %s" % self.action_name.__name__
-    
 class ActionAdmin(admin.ModelAdmin):
     model_actions = []
 
@@ -51,7 +65,13 @@ class ActionAdmin(admin.ModelAdmin):
     
     def __init__(self, model, admin_site):
         super(ActionAdmin, self).__init__(model, admin_site)
-        self.model_actions = [ModelAction(action_options, model=model) for action_options in self.model_actions]
+        model_actions = [] 
+        for action_option in self.model_actions:
+            if issubclass(action_option, ModelAction):
+                model_actions.append(action_option())
+            else:
+                model_actions.append(ProxyModelAction(action_options, model))
+        self.model_actions = model_actions
 
     def get_model_actions_for(self, request, obj):
         return [action for action in self.model_actions if action.can_act_for ( request, obj)]
