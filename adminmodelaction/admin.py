@@ -9,7 +9,7 @@ ACTION_DONE_REDIRECT_URL = 'redirect_url'
 
 class ModelAction(object):
     form_prefix = "__model_action-"
-    def __init__(self, action_method,  model):
+    def __init__(self, action_method, model):
         if not callable(action_method):
             action_method = getattr(model, action_method)
         self.action_method = action_method
@@ -34,7 +34,12 @@ class ModelAction(object):
         msg =  self.action_method(request, obj)
         if msg is None:
             msg = "%s is done." % self.action_name
-        messages.success(request, msg)    
+        messages.success(request, msg)
+
+    def get_redirect_url(self, request, obj):
+        if self.redirect_url:
+            return self.redirect_url(request, obj)
+        return None
             
     def __unicode__(self):
         return u"ModelAction %s" % self.action_name.__name__
@@ -61,7 +66,7 @@ class ActionAdmin(admin.ModelAdmin):
                 form_name = action.form_name
                 if request.POST.has_key(form_name):
                     action.do_action(request, obj)
-            redirect_url = action.redirect_url or request.path
+            redirect_url = action.get_redirect_url(request, obj) or request.path
             response = HttpResponseRedirect(redirect_url)
         else:
             response =  super(ActionAdmin, self).change_view(request, object_id, extra_context)
