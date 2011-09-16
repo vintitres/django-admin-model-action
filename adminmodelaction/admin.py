@@ -71,7 +71,7 @@ class ActionAdmin(admin.ModelAdmin):
             if inspect.isclass(action_option) and issubclass(action_option, ModelAction):
                 model_actions.append(action_option())
             else:
-                model_actions.append(ProxyModelAction(action_options, model))
+                model_actions.append(ProxyModelAction(action_option, model))
         self.model_actions = model_actions
 
     def get_model_actions_for(self, request, obj):
