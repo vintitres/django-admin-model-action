@@ -81,15 +81,18 @@ class ActionAdmin(admin.ModelAdmin):
         if extra_context is None:
             extra_context = {}
         obj = self.get_object(request, admin.util.unquote(object_id))    
-        extra_context['model_actions'] = self.get_model_actions_for(request, obj)
-        if request.POST.has_key('is_model_action'):
-            redirect_url = request.path
-            for action in self.model_actions:
-                form_name = action.form_name
-                if request.POST.has_key(form_name):
-                    action.do_action(request, obj)
-                    redirect_url = action.get_redirect_url(request, obj) or redirect_url
-            response = HttpResponseRedirect(redirect_url)
+        if obj is not None:
+            extra_context['model_actions'] = self.get_model_actions_for(request, obj)
+            if request.POST.has_key('is_model_action'):
+                redirect_url = request.path
+                for action in self.model_actions:
+                    form_name = action.form_name
+                    if request.POST.has_key(form_name):
+                        action.do_action(request, obj)
+                        redirect_url = action.get_redirect_url(request, obj) or redirect_url
+                response = HttpResponseRedirect(redirect_url)
+            else:
+                response = super(ActionAdmin, self).change_view(request, object_id, extra_context)
         else:
-            response =  super(ActionAdmin, self).change_view(request, object_id, extra_context)
+            response = super(ActionAdmin, self).change_view(request, object_id, extra_context)
         return response
